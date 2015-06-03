@@ -114,6 +114,19 @@ public class LdaModel {
 		}
 	}
 	
+	
+	/**
+	 * Add the classify part of LDA
+	 * @param doc
+	 * @return theta distribution of doc
+	 */
+	public ArrayList<Float> classify(Document doc){
+	
+		ArrayList<Float> newDocTheta = new ArrayList<Float>();
+		return newDocTheta;
+		
+	}
+	
 	private void updateEstimatedParameters() {
 		// TODO Auto-generated method stub
 		for(int k = 0; k < K; k++){
