@@ -11,7 +11,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import liuyang.nlp.lda.com.FileUtil;
 import liuyang.nlp.lda.conf.PathConfig;
@@ -115,15 +118,83 @@ public class LdaModel {
 	}
 	
 	
+
 	/**
 	 * Add the classify part of LDA
-	 * @param doc
-	 * @return theta distribution of doc
+	 * @param doc 文档
+	 * @param termToIndexMap 用于索引word序号
+	 * @return doc的topic分布 :theta
 	 */
-	public ArrayList<Float> classify(Document doc){
-	
-		ArrayList<Float> newDocTheta = new ArrayList<Float>();
-		return newDocTheta;
+	public double[] classify(Document doc, Map<String, Integer> termToIndexMap,double[][] phi){
+		
+		ArrayList<String> oldWords = doc.words;
+		ArrayList<String> newWords = new ArrayList<String>();
+		Set<String> wordSet = new HashSet<String>();
+		//将训练集合中没有的word排除，并通过集合去重
+		for(String word : oldWords){
+			if(termToIndexMap.containsKey(word)){
+				newWords.add(word);
+				wordSet.add(word);
+			}
+		}
+		
+		//定义变量
+		int nWords = newWords.size();
+		//d_theta为主题分布
+		double[] d_theta = new double[K];
+		//d_z记录每个word的主题
+		int[] d_z = new int[nWords];
+		//d_V表示不重复的word的个数
+		int d_V = wordSet.size();
+		//d_nk表示              topic1  topic2  ...  topicK
+		//      doc  0.1     0.1     ...  0.1 
+		int[] d_nk = new int[K];
+		//d_nkSum表示d_nk中每行的sum
+		int d_nkSum = 0;
+		
+		
+		//d_doc表示每个词的序号
+		int[] d_doc = new int[nWords];
+		
+		//给doc中的word标号
+		for(int i = 0; i < nWords; ++i){
+			String word = newWords.get(i);
+			int index = termToIndexMap.get(word);
+			d_doc[i] = index;
+		}
+		
+		//初始化topic
+		for(int i = 0; i < nWords; ++i){
+			int initTopic = (int)(Math.random() * K);
+			d_z[i] = initTopic;
+			//number of words in doc m assigned to topic initTopic add 1
+			d_nk[initTopic]++;
+		}
+		d_nkSum = nWords;
+		
+		//开始采样d_theta
+		int d_iterations = 100;
+		int sample_step = 5;
+		for(int i = 0; i < d_iterations; i++){
+			
+			//以采样步长进行参数更新
+			if(i % d_iterations == sample_step){
+				for(int k = 0; k < K; k++){
+					d_theta[k] = (d_nk[k] + alpha) / (d_nkSum + K * alpha);
+				}
+			}
+			
+			//重复进行吉布斯采样,更新d_z
+			for(int n = 0; n < nWords; n++){
+				// Sample from p(z_i|z_-i, w)
+				//这里利用多态，再定义一个sampleTopicZ方法
+				int newTopic = sampleTopicZ(n, phi);
+				d_z[n] = newTopic;
+			}
+		}
+		
+		
+		return null;
 		
 	}
 	
@@ -142,6 +213,10 @@ public class LdaModel {
 		}
 	}
 
+	private int sampleTopicZ(int n, double[][] phi){
+		return 0;
+	}
+	
 	private int sampleTopicZ(int m, int n) {
 		// TODO Auto-generated method stub
 		// Sample from p(z_i|z_-i, w) using Gibbs upde rule

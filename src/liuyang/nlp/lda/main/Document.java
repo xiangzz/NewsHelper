@@ -1,6 +1,7 @@
 package liuyang.nlp.lda.main;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,8 +11,42 @@ import liuyang.nlp.lda.com.Stopwords;
 
 public class Document {	
 	private String docName;
+	public ArrayList<String> words;
 	int[] docWords;
 	
+	/**
+	 * 单独读取一篇文档时用的构造函数
+	 * @param docName
+	 */
+	public Document(String docName){
+		//初始化
+		this.docName = docName;	
+		ArrayList<String> docLines = new ArrayList<String>();
+		ArrayList<String> words = new ArrayList<String>();
+		FileUtil.readLines(docName, docLines);
+		for(String line : docLines){
+			FileUtil.tokenizeAndLowerCase(line, words);
+		}
+		//移除stop word和 noise word
+		for(int i = 0; i < words.size(); i++){
+			if(Stopwords.isStopword(words.get(i)) || isNoiseWord(words.get(i))){
+				words.remove(i);
+				i--;
+			}
+		}
+		this.words = words;
+		words.clear();
+		
+	}
+	
+	
+	/**
+	 * 在Documents初始化时用的构造函数
+	 * @param docName
+	 * @param termToIndexMap
+	 * @param indexToTermMap
+	 * @param termCountMap
+	 */
 	public Document(String docName, Map<String, Integer> termToIndexMap,
 			ArrayList<String> indexToTermMap, Map<String, Integer> termCountMap){
 		this.docName = docName;
