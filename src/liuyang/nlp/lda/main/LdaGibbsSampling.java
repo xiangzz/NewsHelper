@@ -80,6 +80,10 @@ public class LdaGibbsSampling {
 		getParametersFromFile(ldaparameters, parameterFile);
 		Documents docSet = new Documents();
 		docSet.readDocs(originalDocsPath);
+		//added by tokyo
+		System.out.println("0 save termToIndexMap to file ...");
+		docSet.savetermToIndexMap();
+		
 		System.out.println("wordMap size " + docSet.termToIndexMap.size());
 		FileUtil.mkdir(new File(resultPath));
 		LdaModel model = new LdaModel(ldaparameters);

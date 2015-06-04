@@ -5,8 +5,86 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.*;
 
+import liuyang.nlp.lda.conf.PathConfig;
+
 
 public class FileUtil {
+
+	/**
+	 *从文件中读取map（termtoIndexMap）
+	 * @return termtoIndexMap
+	 */
+	public static Map<String, Integer> readMapfromFile(){
+		Map<String, Integer> termtoIndexMap = new HashMap<String, Integer>();
+		String filePath = PathConfig.LdaResultsPath;
+		String fileName = "termToIndexMap";
+		BufferedReader reader = null;
+
+		try {
+
+			reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath + fileName),"GBK"));
+
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				String key = line.split(":")[0];
+				Integer value = Integer.valueOf(line.split(":")[1]);
+				termtoIndexMap.put(key, value);
+			}
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		return termtoIndexMap;
+	}
+	
+	/**
+	 * 从文件中读取矩阵(phi[K][V])
+	 * @return
+	 * @throws IOException
+	 */
+	public static Double[][] readMatrixFromFile()  {
+		String filePath = PathConfig.LdaResultsPath;
+		String fileName = "lda_100.phi";
+		List<Double[]> matrix = new LinkedList<>();
+		List<Double> row;
+		BufferedReader reader = null;
+
+		try {
+			String line;
+			reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath + fileName),"GBK"));
+			while ((line = reader.readLine()) != null && !line.equals("")) {
+				row = new LinkedList<>();
+				for (String number: line.split("\t")) {
+					row.add(Double.valueOf(number));
+				}
+				matrix.add(row.toArray(new Double[row.size()]));
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return  matrix.toArray(new Double[matrix.size()][]);
+	}
 
 	public static void readLines(String file, ArrayList<String> lines) {
 		BufferedReader reader = null;
@@ -66,7 +144,6 @@ public class FileUtil {
 		try {
 
 			writer = new BufferedWriter(new FileWriter(new File(file)));
-
 			for (int i = 0; i < counts.size(); i++) {
 				writer.write(counts.get(i) + "\n");
 			}
@@ -200,8 +277,8 @@ public class FileUtil {
 								System.out.print(tokens.get(j) + " ");
 							}
 							System.err
-									.println(type_map
-											+ " Error ! Not two elements in one line !");
+							.println(type_map
+									+ " Error ! Not two elements in one line !");
 							return;
 						}
 						if (!typeMap.containsKey(tokens.get(0)))
@@ -237,8 +314,8 @@ public class FileUtil {
 								System.out.print(tokens.get(j) + " ");
 							}
 							System.err
-									.println(type_map
-											+ " Error ! Not two elements in one line !");
+							.println(type_map
+									+ " Error ! Not two elements in one line !");
 							return;
 						}
 						if (!hashMap.containsKey(tokens.get(0)))
@@ -275,8 +352,8 @@ public class FileUtil {
 								System.out.print(tokens.get(j) + " ");
 							}
 							System.err
-									.println(type_map
-											+ " Error ! Not two elements in one line !");
+							.println(type_map
+									+ " Error ! Not two elements in one line !");
 							return;
 						}
 						String key = tokens.get(0);
@@ -312,13 +389,13 @@ public class FileUtil {
 				System.err.println("The folder exists.");
 			} else {
 				System.err
-						.println("The folder do not exist,now trying to create a one...");
+				.println("The folder do not exist,now trying to create a one...");
 				bFile = dirFile.mkdir();
 				if (bFile == true) {
 					System.out.println("Create successfully!");
 				} else {
 					System.err
-							.println("Disable to make the folder,please check the disk is full or not.");
+					.println("Disable to make the folder,please check the disk is full or not.");
 				}
 			}
 		} catch (Exception err) {
@@ -462,7 +539,7 @@ public class FileUtil {
 
 		ArrayList<String> types = new ArrayList<String>();
 		ArrayList<String> tokens = new ArrayList<String>();
-		
+
 		if(type_map != null) {
 			readLines(type_map, types);
 			for (int i = 0; i < types.size(); i++) {
@@ -474,7 +551,7 @@ public class FileUtil {
 								System.out.print(tokens.get(j)+" ");
 							}
 							System.err
-									.println(type_map + " Error ! Not two elements in one line !");
+							.println(type_map + " Error ! Not two elements in one line !");
 							return;
 						}
 						String tokens0 = "";
@@ -491,7 +568,7 @@ public class FileUtil {
 						else {
 							System.err.println(tokens0 + " " + tokens1);
 							System.err
-									.println(type_map + " Ignore this one ! Same type in first column !");
+							.println(type_map + " Ignore this one ! Same type in first column !");
 						}
 					}
 					tokens.clear();
@@ -501,7 +578,7 @@ public class FileUtil {
 	}
 
 	public static String filter4tokenization(String inputstring) {
-//		inputstring = "fds fds Won't won't can't Can't ain't";
+		//		inputstring = "fds fds Won't won't can't Can't ain't";
 		// aggregate common tokenization error
 		inputstring = inputstring.replaceAll("(?i)won't", "will not");
 		inputstring = inputstring.replaceAll("(?i)can't", "can not");
@@ -518,4 +595,13 @@ public class FileUtil {
 			tokens.add(token.toLowerCase().trim());
 		}
 	}
+	
+//	public static void main(String[] args) {
+//		Map<String, Integer> map = FileUtil.readMapfromFile();
+//		System.out.println(map.toString());
+//		
+//		Double[][] matrix = FileUtil.readMatrixFromFile();
+//		System.out.println(matrix[9][0]);
+//
+//	}
 }
