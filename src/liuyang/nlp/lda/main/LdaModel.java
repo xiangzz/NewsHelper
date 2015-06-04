@@ -152,6 +152,9 @@ public class LdaModel {
 		//d_nkSum表示d_nk中每行的sum
 		int d_nkSum = 0;
 		
+		int[][] d_nkt = new int[K][d_V];
+		int[] d_nktSum = new int[K];
+		
 		
 		//d_doc表示每个词的序号
 		int[] d_doc = new int[nWords];
@@ -188,13 +191,21 @@ public class LdaModel {
 			for(int n = 0; n < nWords; n++){
 				// Sample from p(z_i|z_-i, w)
 				//这里利用多态，再定义一个sampleTopicZ方法
-				int newTopic = sampleTopicZ(n, phi);
+				int newTopic = sampleTopicZ(n,d_z,d_doc,
+						d_nk,d_nkSum,d_nkt,d_nktSum,phi);
 				d_z[n] = newTopic;
 			}
 		}
 		
-		
-		return null;
+		//归一化处理
+		double d_thetaSum = 0.0;
+		for (double x:d_theta){
+			d_thetaSum += x;
+		}
+		for (int i=0;i< d_theta.length;++i){
+			d_theta[i] = d_theta[i] / d_thetaSum;
+		}
+		return d_theta;
 		
 	}
 	
@@ -213,9 +224,56 @@ public class LdaModel {
 		}
 	}
 
-	private int sampleTopicZ(int n, double[][] phi){
-		return 0;
+	
+	/**
+	 * 对新输入未分类文档进行采样
+	 * @param n
+	 * @param d_nk
+	 * @param d_nkSum
+	 * @param d_nkt
+	 * @param d_nktSum
+	 * @param phi
+	 * @return
+	 */
+	private int sampleTopicZ(int n,int[] d_z,int[] d_doc,
+			int[] d_nk, Integer d_nkSum,
+			int[][] d_nkt, int[] d_nktSum,
+			double[][] phi){
+		
+		int d_V = d_nkt[0].length;
+		int oldTopic = d_z[n];
+		int t = d_doc[n];
+		
+		d_nk[oldTopic]--;
+		d_nkt[oldTopic][t]--;
+		d_nkSum--;
+		d_nktSum[oldTopic]--;
+		//计算 p(z_i = k|z_-i, w)
+		double [] p = new double[K];
+		for(int k = 0; k < K; k++){
+			p[k] = (d_nkt[k][t] + beta) / (d_nktSum[k] + d_V * beta) * phi[k][t];
+		}
+		//利用赌轮法确定topic
+		for(int k = 1; k < K; k++){
+			p[k] += p[k - 1];
+		}
+		double u = Math.random() * p[K - 1]; //p[] is unnormalised
+		int newTopic;
+		for(newTopic = 0; newTopic < K; newTopic++){
+			if(u < p[newTopic]){
+				break;
+			}
+		}
+		//更新这个文档第n个词的topic
+		d_nk[newTopic]++;
+		d_nkt[newTopic][t]++;
+		d_nkSum++;
+		d_nktSum[newTopic]++;
+		return newTopic;
+		
 	}
+	
+	
 	
 	private int sampleTopicZ(int m, int n) {
 		// TODO Auto-generated method stub
