@@ -35,7 +35,7 @@ public class Document {
 			}
 		}
 		this.words = words;
-		words.clear();
+		//words.clear();
 		
 	}
 	

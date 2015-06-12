@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -125,11 +126,13 @@ public class LdaModel {
 	 * @param termToIndexMap 用于索引word序号
 	 * @return doc的topic分布 :theta
 	 */
-	public double[] classify(Document doc, Map<String, Integer> termToIndexMap,double[][] phi){
+	public double[] classify(Document doc, Map<String, Integer> termToIndexMap,Double[][] phi){
 		
 		ArrayList<String> oldWords = doc.words;
 		ArrayList<String> newWords = new ArrayList<String>();
 		Set<String> wordSet = new HashSet<String>();
+		Map<Integer,Integer> transTable = new HashMap<Integer,Integer>();
+	
 		//将训练集合中没有的word排除，并通过集合去重
 		for(String word : oldWords){
 			if(termToIndexMap.containsKey(word)){
@@ -140,12 +143,14 @@ public class LdaModel {
 		
 		//定义变量
 		int nWords = newWords.size();
+		int d_V = wordSet.size();
+	
 		//d_theta为主题分布
 		double[] d_theta = new double[K];
 		//d_z记录每个word的主题
 		int[] d_z = new int[nWords];
 		//d_V表示不重复的word的个数
-		int d_V = wordSet.size();
+		
 		//d_nk表示              topic1  topic2  ...  topicK
 		//      doc  0.1     0.1     ...  0.1 
 		int[] d_nk = new int[K];
@@ -160,10 +165,14 @@ public class LdaModel {
 		int[] d_doc = new int[nWords];
 		
 		//给doc中的word标号
+		int itemNum = 0;
 		for(int i = 0; i < nWords; ++i){
 			String word = newWords.get(i);
 			int index = termToIndexMap.get(word);
 			d_doc[i] = index;
+			if (!transTable.containsKey(index)){
+				transTable.put(index, itemNum++);
+			}
 		}
 		
 		//初始化topic
@@ -172,6 +181,12 @@ public class LdaModel {
 			d_z[i] = initTopic;
 			//number of words in doc m assigned to topic initTopic add 1
 			d_nk[initTopic]++;
+			//number of terms doc[m][n] assigned to topic initTopic add 1
+			int t = d_doc[i];
+			int trans_t = transTable.get(t);
+			d_nkt[initTopic][trans_t]++;
+			// total number of words assigned to topic initTopic add 1
+			d_nktSum[initTopic]++;
 		}
 		d_nkSum = nWords;
 		
@@ -191,7 +206,7 @@ public class LdaModel {
 			for(int n = 0; n < nWords; n++){
 				// Sample from p(z_i|z_-i, w)
 				//这里利用多态，再定义一个sampleTopicZ方法
-				int newTopic = sampleTopicZ(n,d_z,d_doc,
+				int newTopic = sampleTopicZ(n,d_z,d_doc,transTable,
 						d_nk,d_nkSum,d_nkt,d_nktSum,phi);
 				d_z[n] = newTopic;
 			}
@@ -235,14 +250,15 @@ public class LdaModel {
 	 * @param phi
 	 * @return
 	 */
-	private int sampleTopicZ(int n,int[] d_z,int[] d_doc,
+	private int sampleTopicZ(int n,int[] d_z,int[] d_doc,Map<Integer,Integer> transTable,
 			int[] d_nk, Integer d_nkSum,
 			int[][] d_nkt, int[] d_nktSum,
-			double[][] phi){
+			Double[][] phi){
 		
 		int d_V = d_nkt[0].length;
 		int oldTopic = d_z[n];
-		int t = d_doc[n];
+		int origin_t = d_doc[n];
+		int t = transTable.get(origin_t);
 		
 		d_nk[oldTopic]--;
 		d_nkt[oldTopic][t]--;

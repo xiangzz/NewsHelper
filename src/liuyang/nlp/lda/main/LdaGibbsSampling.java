@@ -3,6 +3,7 @@ package liuyang.nlp.lda.main;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 import liuyang.nlp.lda.com.FileUtil;
 import liuyang.nlp.lda.conf.ConstantConfig;
@@ -70,8 +71,9 @@ public class LdaGibbsSampling {
 	 * @param args
 	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws IOException {
-		// TODO Auto-generated method stub
+	public static void train() throws IOException{
+		//
+		// 参数的路径
 		String originalDocsPath = PathConfig.ldaDocsPath;
 		String resultPath = PathConfig.LdaResultsPath;
 		String parameterFile= ConstantConfig.LDAPARAMETERFILE;
@@ -80,7 +82,7 @@ public class LdaGibbsSampling {
 		getParametersFromFile(ldaparameters, parameterFile);
 		Documents docSet = new Documents();
 		docSet.readDocs(originalDocsPath);
-		//added by tokyo
+		//added by tokyo 
 		System.out.println("0 save termToIndexMap to file ...");
 		docSet.savetermToIndexMap();
 		
@@ -94,5 +96,31 @@ public class LdaGibbsSampling {
 		System.out.println("3 Output the final model ...");
 		model.saveIteratedModel(ldaparameters.iteration, docSet);
 		System.out.println("Done!");
+	}
+	
+	public static void inference(){
+
+		Document newDoc = new Document(PathConfig.ldaNewDocPath );
+		//读取phi与termToIndexMap
+		Map<String,Integer> termToIndexMap = FileUtil.readMapfromFile();
+		Double[][] phi = FileUtil.readMatrixFromFile();
+		
+		//初始化Model
+		String parameter_file= ConstantConfig.LDAPARAMETERFILE;
+		modelparameters lda_parameters = new modelparameters();
+		getParametersFromFile(lda_parameters, parameter_file);
+		LdaModel c_model = new LdaModel(lda_parameters);
+		//开始推理
+		double[] res = c_model.classify(newDoc, termToIndexMap, phi);
+		for (int i = 0;i<res.length;++i){
+			System.out.println("topic"+i+":"+res[i]);
+		}
+		
+		
+	}
+	
+	public static void main(String[] args) throws IOException  {
+		inference();
+		//train();
 	}
 }
