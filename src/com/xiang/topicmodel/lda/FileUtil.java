@@ -1,4 +1,4 @@
-package liuyang.nlp.lda.com;
+package com.xiang.topicmodel.lda;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -125,6 +125,48 @@ public class FileUtil {
 		}
 		return  matrix.toArray(new Double[matrix.size()][]);
 	}
+	
+	
+	public static Double[][] readMatrixFromFile(String paramFileName) throws IOException  {
+		
+		
+		Properties prop = new Properties();
+		File pFile = new File(paramFileName);
+		FileInputStream pfin = new FileInputStream(pFile);
+		prop.load(pfin);
+		
+		String filePath = prop.getProperty(("ldaResultsPath"));
+		String fileName = prop.getProperty(("phiFilePath"));
+		List<Double[]> matrix = new LinkedList<>();
+		List<Double> row;
+		BufferedReader reader = null;
+
+		try {
+			String line;
+			reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath + fileName),"GBK"));
+			while ((line = reader.readLine()) != null && !line.equals("")) {
+				row = new LinkedList<>();
+				for (String number: line.split("\t")) {
+					row.add(Double.valueOf(number));
+				}
+				matrix.add(row.toArray(new Double[row.size()]));
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return  matrix.toArray(new Double[matrix.size()][]);
+	}
+	
 
 	public static void readLines(String file, ArrayList<String> lines) {
 		BufferedReader reader = null;
